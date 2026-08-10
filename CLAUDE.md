@@ -34,3 +34,13 @@ Node.js on this machine is a portable (non-admin) install at `%LOCALAPPDATA%\Pro
 ## Cost note
 
 Hosting (Vercel + GitHub Actions) is free-tier. The Anthropic API is the one pay-per-use component — a monthly spend limit should be set in the Anthropic Console.
+
+## Deployment status (updated 2026-08-10)
+
+- **Live**: https://healthfit-kohl.vercel.app — deployed and working (login, dashboard, meal capture+AI+save, meal edit/delete, weight entry+chart, PWA install all tested successfully on the owner's phone).
+- **Repo**: https://github.com/jdelichotti/healthfit (public).
+- **Hosting stack as actually provisioned**: Vercel project → **Neon** Postgres (Vercel's native "Postgres" storage is now a Neon marketplace integration, "Launch"/free plan; env var is plain `DATABASE_URL`, no custom prefix) + **Vercel Blob** (provisioned via the newer OIDC flow — env vars are `BLOB_STORE_ID` / `BLOB_WEBHOOK_PUBLIC_KEY`, **not** a static `BLOB_READ_WRITE_TOKEN`; `@vercel/blob`'s `put()` auto-detects this and uses the platform-injected `VERCEL_OIDC_TOKEN` at runtime — no code changes needed, this just works on Vercel but won't work from an unlinked local shell without `vercel env pull`).
+- **Vercel Production env vars set**: `DATABASE_URL`, `BLOB_STORE_ID`, `BLOB_WEBHOOK_PUBLIC_KEY` (auto-created by the integrations) plus manually-added `ANTHROPIC_API_KEY`, `SESSION_SECRET`, `GARMIN_INGEST_SECRET`, `APP_PASSWORD_HASH`.
+- **DB migration**: `db/migrations/0000_loose_onslaught.sql` was applied by hand via the Neon Console SQL Editor (not `drizzle-kit migrate`, since no Vercel CLI/DB link was ever set up from this machine). **Any future schema change needs the same manual step** (generate migration locally with `drizzle-kit generate`, then paste the new SQL into Neon's SQL Editor) until CLI-based migration is wired up.
+- **Garmin sync**: code is deployed; GitHub Actions secrets (`GARMIN_EMAIL`, `GARMIN_PASSWORD`, `APP_INGEST_URL` = `https://healthfit-kohl.vercel.app/api/garmin/ingest`, `GARMIN_INGEST_SECRET`) were being added as of the last session — confirm they're all set, then trigger the workflow manually (Actions tab → Garmin Sync → Run workflow) to verify it actually pulls data from the Forerunner 55 and lands a row in `garmin_daily_metrics`.
+- **Still to verify**: a monthly spend limit was set on the Anthropic API key in the Anthropic Console (recommended, not yet confirmed).

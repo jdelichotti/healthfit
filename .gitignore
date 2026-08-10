@@ -24,6 +24,11 @@
 .DS_Store
 *.pem
 
+# stray screenshots/files dropped at the project root while chatting
+/*.jpeg
+/*.jpg
+/*.png
+
 # debug
 npm-debug.log*
 yarn-debug.log*

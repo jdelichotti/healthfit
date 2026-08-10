@@ -15,10 +15,11 @@ export const meals = pgTable("meals", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-  photoUrl: text("photo_url").notNull(),
+  photoUrl: text("photo_url"),
   photoThumbUrl: text("photo_thumb_url"),
   foodName: text("food_name").notNull(),
   calories: integer("calories").notNull(),
+  weightG: numeric("weight_g"),
   proteinG: numeric("protein_g"),
   carbsG: numeric("carbs_g"),
   fatG: numeric("fat_g"),

@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toLocalDateTimeInputValue } from "@/lib/time";
+import type { FoodAnalysis } from "@/lib/claude";
 
 export function MealEditForm({
   meal,
@@ -10,9 +11,10 @@ export function MealEditForm({
   meal: {
     id: number;
     eatenAt: string;
-    photoUrl: string;
+    photoUrl: string | null;
     foodName: string;
     calories: number;
+    weightG: string | null;
     proteinG: string | null;
     carbsG: string | null;
     fatG: string | null;
@@ -21,6 +23,7 @@ export function MealEditForm({
 }) {
   const [foodName, setFoodName] = useState(meal.foodName);
   const [calories, setCalories] = useState(String(meal.calories));
+  const [weightG, setWeightG] = useState(meal.weightG ?? "");
   const [proteinG, setProteinG] = useState(meal.proteinG ?? "");
   const [carbsG, setCarbsG] = useState(meal.carbsG ?? "");
   const [fatG, setFatG] = useState(meal.fatG ?? "");
@@ -28,10 +31,40 @@ export function MealEditForm({
     toLocalDateTimeInputValue(new Date(meal.eatenAt))
   );
   const [notes, setNotes] = useState(meal.notes ?? "");
+  const [recalculating, setRecalculating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
+  async function handleRecalculate() {
+    if (!foodName.trim()) return;
+    setRecalculating(true);
+    setError(null);
+
+    const res = await fetch("/api/meals/estimate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        food_name: foodName,
+        weight_g: weightG ? Number(weightG) : undefined,
+      }),
+    });
+
+    setRecalculating(false);
+
+    if (!res.ok) {
+      setError("No se pudo recalcular");
+      return;
+    }
+
+    const { analysis } = (await res.json()) as { analysis: FoodAnalysis };
+    setCalories(String(analysis.estimated_calories));
+    setProteinG(String(analysis.protein_g));
+    setCarbsG(String(analysis.carbs_g));
+    setFatG(String(analysis.fat_g));
+    setWeightG(String(analysis.weight_g));
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -44,6 +77,7 @@ export function MealEditForm({
       body: JSON.stringify({
         food_name: foodName,
         calories: Number.parseInt(calories, 10),
+        weight_g: weightG || null,
         protein_g: proteinG || null,
         carbs_g: carbsG || null,
         fat_g: fatG || null,
@@ -80,12 +114,18 @@ export function MealEditForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={meal.photoUrl}
-        alt={meal.foodName}
-        className="w-full rounded-lg object-cover"
-      />
+      {meal.photoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={meal.photoUrl}
+          alt={meal.foodName}
+          className="w-full rounded-lg object-cover"
+        />
+      ) : (
+        <div className="flex h-40 w-full items-center justify-center rounded-lg border border-dashed border-zinc-300 text-sm text-zinc-400 dark:border-zinc-700">
+          Sin foto
+        </div>
+      )}
 
       <label className="flex flex-col gap-1 text-sm">
         Comida
@@ -95,6 +135,26 @@ export function MealEditForm({
           className="rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
         />
       </label>
+
+      <div className="flex items-end gap-3">
+        <label className="flex flex-1 flex-col gap-1 text-sm">
+          Peso estimado (g)
+          <input
+            type="number"
+            value={weightG}
+            onChange={(e) => setWeightG(e.target.value)}
+            className="rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+          />
+        </label>
+        <button
+          type="button"
+          onClick={handleRecalculate}
+          disabled={recalculating || !foodName.trim()}
+          className="rounded border border-zinc-300 px-3 py-2 text-sm disabled:opacity-50 dark:border-zinc-700"
+        >
+          {recalculating ? "Recalculando..." : "Recalcular con IA"}
+        </button>
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1 text-sm">

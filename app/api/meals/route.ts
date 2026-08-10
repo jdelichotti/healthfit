@@ -24,6 +24,7 @@ export async function POST(request: Request) {
   const eatenAt = formData.get("eaten_at");
   const foodName = formData.get("food_name");
   const calories = formData.get("calories");
+  const weightG = formData.get("weight_g");
   const proteinG = formData.get("protein_g");
   const carbsG = formData.get("carbs_g");
   const fatG = formData.get("fat_g");
@@ -31,7 +32,6 @@ export async function POST(request: Request) {
   const aiSuggestion = formData.get("ai_suggestion");
 
   if (
-    !(photo instanceof File) ||
     typeof eatenAt !== "string" ||
     typeof foodName !== "string" ||
     typeof calories !== "string"
@@ -39,8 +39,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Datos incompletos" }, { status: 400 });
   }
 
-  const buffer = Buffer.from(await photo.arrayBuffer());
-  const photoUrl = await uploadMealPhoto(buffer, photo.type || "image/jpeg");
+  let photoUrl: string | null = null;
+  if (photo instanceof File && photo.size > 0) {
+    const buffer = Buffer.from(await photo.arrayBuffer());
+    photoUrl = await uploadMealPhoto(buffer, photo.type || "image/jpeg");
+  }
 
   const [row] = await db
     .insert(meals)
@@ -49,6 +52,7 @@ export async function POST(request: Request) {
       photoUrl,
       foodName,
       calories: Number.parseInt(calories, 10),
+      weightG: typeof weightG === "string" && weightG !== "" ? weightG : null,
       proteinG: typeof proteinG === "string" && proteinG !== "" ? proteinG : null,
       carbsG: typeof carbsG === "string" && carbsG !== "" ? carbsG : null,
       fatG: typeof fatG === "string" && fatG !== "" ? fatG : null,

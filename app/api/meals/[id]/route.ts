@@ -42,6 +42,8 @@ export async function PATCH(
   const updates: Partial<typeof meals.$inferInsert> = {};
   if (typeof body.food_name === "string") updates.foodName = body.food_name;
   if (typeof body.calories === "number") updates.calories = body.calories;
+  if (typeof body.weight_g === "string" || body.weight_g === null)
+    updates.weightG = body.weight_g;
   if (typeof body.protein_g === "string" || body.protein_g === null)
     updates.proteinG = body.protein_g;
   if (typeof body.carbs_g === "string" || body.carbs_g === null)

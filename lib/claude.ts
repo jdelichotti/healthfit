@@ -10,6 +10,7 @@ export const FoodAnalysisSchema = z.object({
     .describe(
       "Short, human-readable description of the meal in Spanish, e.g. 'Milanesa con puré de papas'"
     ),
+  weight_g: z.number().describe("Estimated total weight of the portion, in grams"),
   estimated_calories: z.number().int(),
   protein_g: z.number(),
   carbs_g: z.number(),
@@ -39,9 +40,38 @@ export async function analyzeFoodPhoto(
           },
           {
             type: "text",
-            text: "Identificá la comida en esta foto y estimá sus calorías y macronutrientes (proteínas, carbohidratos, grasas en gramos) para la porción completa visible. Sé realista respecto al tamaño de la porción.",
+            text: "Identificá la comida en esta foto, estimá su peso total en gramos, y estimá sus calorías y macronutrientes (proteínas, carbohidratos, grasas en gramos) para la porción completa visible. Sé realista respecto al tamaño de la porción.",
           },
         ],
+      },
+    ],
+  });
+
+  if (!message.parsed_output) {
+    throw new Error("Claude no devolvió una respuesta estructurada válida");
+  }
+
+  return message.parsed_output;
+}
+
+export async function estimateFoodFromDescription(
+  foodName: string,
+  weightG?: number
+): Promise<FoodAnalysis> {
+  const weightInstruction = weightG
+    ? `La porción pesa exactamente ${weightG} g — usá ese dato como fijo y estimá las calorías y macronutrientes en consecuencia.`
+    : "Estimá también un peso típico de la porción en gramos.";
+
+  const message = await client.messages.parse({
+    model: "claude-sonnet-5",
+    max_tokens: 1024,
+    output_config: {
+      format: zodOutputFormat(FoodAnalysisSchema),
+    },
+    messages: [
+      {
+        role: "user",
+        content: `Estimá las calorías y macronutrientes (proteínas, carbohidratos, grasas en gramos) de esta comida a partir de su descripción: "${foodName}". ${weightInstruction} Sé realista.`,
       },
     ],
   });

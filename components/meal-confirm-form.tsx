@@ -10,20 +10,57 @@ export function MealConfirmForm({
   analysis,
   onSaved,
 }: {
-  photo: File;
-  previewUrl: string;
-  analysis: FoodAnalysis;
+  photo: File | null;
+  previewUrl: string | null;
+  analysis: FoodAnalysis | null;
   onSaved: () => void;
 }) {
-  const [foodName, setFoodName] = useState(analysis.food_name);
-  const [calories, setCalories] = useState(String(analysis.estimated_calories));
-  const [proteinG, setProteinG] = useState(String(analysis.protein_g));
-  const [carbsG, setCarbsG] = useState(String(analysis.carbs_g));
-  const [fatG, setFatG] = useState(String(analysis.fat_g));
+  const [foodName, setFoodName] = useState(analysis?.food_name ?? "");
+  const [weightG, setWeightG] = useState(analysis ? String(analysis.weight_g) : "");
+  const [calories, setCalories] = useState(
+    analysis ? String(analysis.estimated_calories) : ""
+  );
+  const [proteinG, setProteinG] = useState(analysis ? String(analysis.protein_g) : "");
+  const [carbsG, setCarbsG] = useState(analysis ? String(analysis.carbs_g) : "");
+  const [fatG, setFatG] = useState(analysis ? String(analysis.fat_g) : "");
   const [eatenAt, setEatenAt] = useState(toLocalDateTimeInputValue(new Date()));
   const [notes, setNotes] = useState("");
+  const [lastAnalysis, setLastAnalysis] = useState<FoodAnalysis | null>(analysis);
+  const [recalculating, setRecalculating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function handleRecalculate() {
+    if (!foodName.trim()) return;
+    setRecalculating(true);
+    setError(null);
+
+    const res = await fetch("/api/meals/estimate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        food_name: foodName,
+        weight_g: weightG ? Number(weightG) : undefined,
+      }),
+    });
+
+    setRecalculating(false);
+
+    if (!res.ok) {
+      setError("No se pudo recalcular");
+      return;
+    }
+
+    const { analysis: newAnalysis } = (await res.json()) as {
+      analysis: FoodAnalysis;
+    };
+    setCalories(String(newAnalysis.estimated_calories));
+    setProteinG(String(newAnalysis.protein_g));
+    setCarbsG(String(newAnalysis.carbs_g));
+    setFatG(String(newAnalysis.fat_g));
+    setWeightG(String(newAnalysis.weight_g));
+    setLastAnalysis(newAnalysis);
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -31,15 +68,16 @@ export function MealConfirmForm({
     setError(null);
 
     const formData = new FormData();
-    formData.set("photo", photo);
+    if (photo) formData.set("photo", photo);
     formData.set("eaten_at", new Date(eatenAt).toISOString());
     formData.set("food_name", foodName);
     formData.set("calories", calories);
+    formData.set("weight_g", weightG);
     formData.set("protein_g", proteinG);
     formData.set("carbs_g", carbsG);
     formData.set("fat_g", fatG);
     formData.set("notes", notes);
-    formData.set("ai_suggestion", JSON.stringify(analysis));
+    if (lastAnalysis) formData.set("ai_suggestion", JSON.stringify(lastAnalysis));
 
     const res = await fetch("/api/meals", { method: "POST", body: formData });
     setSaving(false);
@@ -54,21 +92,48 @@ export function MealConfirmForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={previewUrl}
-        alt="Foto de la comida"
-        className="w-full rounded-lg object-cover"
-      />
+      {previewUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={previewUrl}
+          alt="Foto de la comida"
+          className="w-full rounded-lg object-cover"
+        />
+      ) : (
+        <div className="flex h-40 w-full items-center justify-center rounded-lg border border-dashed border-zinc-300 text-sm text-zinc-400 dark:border-zinc-700">
+          Sin foto
+        </div>
+      )}
 
       <label className="flex flex-col gap-1 text-sm">
         Comida
         <input
           value={foodName}
           onChange={(e) => setFoodName(e.target.value)}
+          placeholder="Ej: Milanesa con puré de papas"
           className="rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
         />
       </label>
+
+      <div className="flex items-end gap-3">
+        <label className="flex flex-1 flex-col gap-1 text-sm">
+          Peso estimado (g)
+          <input
+            type="number"
+            value={weightG}
+            onChange={(e) => setWeightG(e.target.value)}
+            className="rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+          />
+        </label>
+        <button
+          type="button"
+          onClick={handleRecalculate}
+          disabled={recalculating || !foodName.trim()}
+          className="rounded border border-zinc-300 px-3 py-2 text-sm disabled:opacity-50 dark:border-zinc-700"
+        >
+          {recalculating ? "Recalculando..." : "Recalcular con IA"}
+        </button>
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1 text-sm">
@@ -131,10 +196,12 @@ export function MealConfirmForm({
         />
       </label>
 
-      <p className="text-xs text-zinc-500">
-        Confianza de la IA: {analysis.confidence}. Revisá y corregí antes de
-        guardar.
-      </p>
+      {lastAnalysis && (
+        <p className="text-xs text-zinc-500">
+          Confianza de la IA: {lastAnalysis.confidence}. Revisá y corregí antes
+          de guardar.
+        </p>
+      )}
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 

@@ -52,12 +52,18 @@ export default async function MealsPage() {
                     href={`/meals/${meal.id}`}
                     className="flex items-center gap-3 rounded border border-zinc-200 p-2 dark:border-zinc-800"
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={meal.photoUrl}
-                      alt={meal.foodName}
-                      className="h-14 w-14 rounded object-cover"
-                    />
+                    {meal.photoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={meal.photoUrl}
+                        alt={meal.foodName}
+                        className="h-14 w-14 rounded object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded bg-zinc-100 text-[10px] text-zinc-400 dark:bg-zinc-900">
+                        Sin foto
+                      </div>
+                    )}
                     <div className="flex flex-1 flex-col">
                       <span className="text-sm font-medium">{meal.foodName}</span>
                       <span className="text-xs text-zinc-500">

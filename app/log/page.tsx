@@ -9,7 +9,12 @@ import { MealConfirmForm } from "@/components/meal-confirm-form";
 type Stage =
   | { step: "idle" }
   | { step: "analyzing"; photo: File; previewUrl: string }
-  | { step: "ready"; photo: File; previewUrl: string; analysis: FoodAnalysis }
+  | {
+      step: "ready";
+      photo: File | null;
+      previewUrl: string | null;
+      analysis: FoodAnalysis | null;
+    }
   | { step: "error"; message: string };
 
 export default function LogPage() {
@@ -53,13 +58,29 @@ export default function LogPage() {
       <h1 className="text-xl font-semibold">Registrar comida</h1>
 
       {stage.step === "idle" && (
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          className="rounded bg-black px-3 py-4 text-white dark:bg-white dark:text-black"
-        >
-          Sacar foto
-        </button>
+        <div className="flex flex-col gap-3">
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className="rounded bg-black px-3 py-4 text-white dark:bg-white dark:text-black"
+          >
+            Sacar foto
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              setStage({
+                step: "ready",
+                photo: null,
+                previewUrl: null,
+                analysis: null,
+              })
+            }
+            className="rounded border border-zinc-300 px-3 py-4 dark:border-zinc-700"
+          >
+            Registrar sin foto
+          </button>
+        </div>
       )}
 
       {stage.step === "analyzing" && (

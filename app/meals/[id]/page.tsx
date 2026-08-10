@@ -27,6 +27,7 @@ export default async function MealDetailPage({
           photoUrl: meal.photoUrl,
           foodName: meal.foodName,
           calories: meal.calories,
+          weightG: meal.weightG,
           proteinG: meal.proteinG,
           carbsG: meal.carbsG,
           fatG: meal.fatG,

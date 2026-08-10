@@ -27,7 +27,7 @@ export function CaloriesChart({
   return (
     <div className="h-64 w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+        <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <CartesianGrid
             strokeDasharray="0"
             stroke="var(--chart-grid)"
@@ -44,7 +44,7 @@ export function CaloriesChart({
             tick={{ fontSize: 11, fill: "var(--chart-muted)" }}
             axisLine={false}
             tickLine={false}
-            width={36}
+            width={44}
           />
           <Tooltip
             contentStyle={{

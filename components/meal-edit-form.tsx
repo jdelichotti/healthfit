@@ -76,7 +76,7 @@ export function MealEditForm({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         food_name: foodName,
-        calories: Number.parseInt(calories, 10),
+        calories: Number.parseInt(calories, 10) || 0,
         weight_g: weightG || null,
         protein_g: proteinG || null,
         carbs_g: carbsG || null,
@@ -132,6 +132,7 @@ export function MealEditForm({
         <input
           value={foodName}
           onChange={(e) => setFoodName(e.target.value)}
+          required
           className="rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
         />
       </label>

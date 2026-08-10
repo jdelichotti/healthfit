@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       eatenAt: new Date(eatenAt),
       photoUrl,
       foodName,
-      calories: Number.parseInt(calories, 10),
+      calories: Number.parseInt(calories, 10) || 0,
       weightG: typeof weightG === "string" && weightG !== "" ? weightG : null,
       proteinG: typeof proteinG === "string" && proteinG !== "" ? proteinG : null,
       carbsG: typeof carbsG === "string" && carbsG !== "" ? carbsG : null,

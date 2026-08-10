@@ -71,7 +71,7 @@ export function MealConfirmForm({
     if (photo) formData.set("photo", photo);
     formData.set("eaten_at", new Date(eatenAt).toISOString());
     formData.set("food_name", foodName);
-    formData.set("calories", calories);
+    formData.set("calories", calories || "0");
     formData.set("weight_g", weightG);
     formData.set("protein_g", proteinG);
     formData.set("carbs_g", carbsG);
@@ -111,6 +111,7 @@ export function MealConfirmForm({
           value={foodName}
           onChange={(e) => setFoodName(e.target.value)}
           placeholder="Ej: Milanesa con puré de papas"
+          required
           className="rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
         />
       </label>
